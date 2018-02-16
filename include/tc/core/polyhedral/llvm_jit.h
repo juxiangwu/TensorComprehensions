@@ -34,6 +34,7 @@ class Jit {
   llvm::orc::RTDyldObjectLinkingLayer objectLayer_;
   llvm::orc::IRCompileLayer<decltype(objectLayer_), llvm::orc::SimpleCompiler>
       compileLayer_;
+
  public:
   Jit();
 
@@ -47,6 +48,9 @@ class Jit {
 
   llvm::JITSymbol findSymbol(const std::string name);
   llvm::JITTargetAddress getSymbolAddress(const std::string name);
+
+  llvm::GenericValue runFunction(const std::string fn_name,
+                                 llvm::ArrayRef<llvm::GenericValue> ArgValues);
 
   llvm::TargetMachine& getTargetMachine();
 };
