@@ -15,6 +15,7 @@ add_library(
   rtc.cc
   islpp.cc
 
+  tc_executor.cc
   tc2halide.cc
 
   halide2isl.cc

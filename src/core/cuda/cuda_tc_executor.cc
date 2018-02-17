@@ -20,6 +20,7 @@
 #include "tc/core/mapping_options_cpp_printer.h"
 #include "tc/core/polyhedral/mapped_scop.h"
 #include "tc/core/tc2halide.h"
+#include "tc/core/tc_executor.h"
 #include "tc/core/utils/dlpack.h"
 
 #include "tc/lang/parser.h"
@@ -53,51 +54,6 @@ CudaTcExecutor::CudaTcExecutor(
     const std::string& TcDefinition,
     const std::vector<const DLTensor*>& inputsInfo)
     : CudaTcExecutor(parseOneFunction(TcDefinition), inputsInfo) {}
-
-// TODO: make sure that the empty stride arrays (in DLTensor) are not a problem
-void checkSizesAndStridesAreCompliant(
-    const DLTensor* actual,
-    const DLTensor* expected,
-    const lang::Param& dbg) {
-  if (actual->ndim != expected->ndim) {
-    throw lang::ErrorReport(dbg)
-        << "expected " << expected->ndim << " dimensions but found tensor with "
-        << actual->ndim << " dimensions";
-  }
-  auto atype = toTypeToken(actual->dtype);
-  auto etype = toTypeToken(expected->dtype);
-  if (atype != etype) {
-    throw lang::ErrorReport(dbg) << "expected " << lang::kindToString(etype)
-                                 << " but found " << lang::kindToString(atype);
-  }
-  std::vector<int64_t> shapeA(actual->shape, actual->shape + actual->ndim);
-  std::vector<int64_t> shapeE(
-      expected->shape, expected->shape + expected->ndim);
-  for (int i = 0; i < shapeA.size(); ++i) {
-    if (shapeA[i] != shapeE[i]) {
-      throw lang::ErrorReport(dbg)
-          << "expected size " << shapeE[i] << " for dim " << i << " but found "
-          << shapeA[i];
-    }
-  }
-}
-
-// templating to match both const and non-const DLTensor pointers
-template <typename T>
-void checkSizesAndStridesAreCompliant(
-    const std::vector<T*>& dlTensors,
-    const std::vector<DLTensorUPtr>& tensorInfos,
-    const lang::ListView<lang::Param>& dbgInfo) {
-  if (tensorInfos.size() != dlTensors.size()) {
-    throw lang::ErrorReport(dbgInfo)
-        << "expected " << tensorInfos.size() << " values but found "
-        << dlTensors.size();
-  }
-  for (size_t i = 0; i < tensorInfos.size(); ++i) {
-    checkSizesAndStridesAreCompliant(
-        dlTensors[i], tensorInfos[i].get(), dbgInfo[i]);
-  }
-}
 
 void CudaTcExecutor::checkInputsCompliant(
     const std::vector<const DLTensor*>& inputsInfo) const {
